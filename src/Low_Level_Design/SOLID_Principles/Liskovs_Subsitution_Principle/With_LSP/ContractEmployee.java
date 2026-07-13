@@ -1,6 +1,5 @@
-package Low_Level_Design.SOLID_Principles.Liskovs_Subsitution_Principle.Without_LSP;
+package Low_Level_Design.SOLID_Principles.Liskovs_Subsitution_Principle.With_LSP;
 
-import java.util.List;
 
 public class ContractEmployee  extends Employee {
 
@@ -10,17 +9,7 @@ public class ContractEmployee  extends Employee {
     }
 
     @Override
-    public Double calculateBonus() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Double getSalary() {
         return 25000d;
-    }
-
-    @Override
-    public List<Perks> getPerks() {
-        return null;
     }
 }

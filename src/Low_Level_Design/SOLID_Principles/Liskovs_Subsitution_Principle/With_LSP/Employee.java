@@ -1,6 +1,4 @@
-package Low_Level_Design.SOLID_Principles.Liskovs_Subsitution_Principle.Without_LSP;
-
-import java.util.List;
+package Low_Level_Design.SOLID_Principles.Liskovs_Subsitution_Principle.With_LSP;
 
 public abstract class Employee implements EmployeeInterface {
 

@@ -1,9 +1,9 @@
-package Low_Level_Design.SOLID_Principles.Liskovs_Subsitution_Principle.Without_LSP;
+package Low_Level_Design.SOLID_Principles.Liskovs_Subsitution_Principle.With_LSP;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PermanentEmployee extends Employee{
+public class PermanentEmployee extends Employee implements EmployeeInterfaceSpecialAllowances {
 
 
     public PermanentEmployee(Integer id, String name) {

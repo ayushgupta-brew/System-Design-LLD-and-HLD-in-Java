@@ -1,9 +1,10 @@
-package Low_Level_Design.SOLID_Principles.Liskovs_Subsitution_Principle.Without_LSP;
+package Low_Level_Design.SOLID_Principles.Liskovs_Subsitution_Principle.With_LSP;
+
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TemporaryEmployee extends Employee{
+public class TemporaryEmployee extends Employee implements EmployeeInterfaceSpecialAllowances {
 
 
     public TemporaryEmployee(Integer id, String name) {
@@ -21,10 +22,10 @@ public class TemporaryEmployee extends Employee{
     }
 
     @Override
-    public List<Perks> getPerks() {
+    public List<Perks> getPerks(){
         List<Perks> perksList = new ArrayList<>();
         perksList.add(Perks.LTA);
         perksList.add(Perks.PF);
-        return  perksList;
+        return perksList;
     }
 }
