@@ -1,8 +1,8 @@
-package Low_Level_Design.SOLID_Principles.Dependency_Inversion_Principle.Without_DIP;
+package Low_Level_Design.SOLID_Principles.Dependency_Inversion_Principle.With_DIP;
 
-// Low-level module
-public class MongoDatabase {
-    public void saveToMongo(String data) {
+public class MongoDatabase implements Database{
+    @Override
+    public void save(String data) {
         System.out.println(
                 "Executing MongoDB Function: db.users.insert({name: '"
                         + data + "'})"

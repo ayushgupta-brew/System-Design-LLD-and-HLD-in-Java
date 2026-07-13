@@ -1,17 +1,15 @@
-package Low_Level_Design.SOLID_Principles.Dependency_Inversion_Principle.Without_DIP;
+package Low_Level_Design.SOLID_Principles.Dependency_Inversion_Principle.With_DIP;
 
-// High-level module (Tightly coupled)
+// High-level module (Now loosely coupled via Dependency Injection)
 public class UserService {
-    private final MySQLDatabase mySQLDatabase = new MySQLDatabase();
-    private final MongoDatabase mongoDatabase = new MongoDatabase();
+    private final Database db;
 
-    public void storeUserToSQL(String user) {
-        // MySQL-specific code
-        mySQLDatabase.saveToSQL(user);
+
+    public UserService(Database db) {
+        this.db = db;
     }
 
-    public void storeUserToMongo(String user) {
-        // MongoDB-specific code
-        mongoDatabase.saveToMongo(user);
+    public void storeUser(String user) {
+        db.save(user);
     }
 }
