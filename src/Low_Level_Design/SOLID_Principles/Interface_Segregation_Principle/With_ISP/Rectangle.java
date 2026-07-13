@@ -1,7 +1,9 @@
-package Low_Level_Design.SOLID_Principles.Interface_Segregation_Principle.Without_ISP;
+package Low_Level_Design.SOLID_Principles.Interface_Segregation_Principle.With_ISP;
+
+import Low_Level_Design.SOLID_Principles.Interface_Segregation_Principle.Without_ISP.Shape;
 
 // Rectangle is also a 2D shape but is forced to implement volume()
-public class Rectangle implements Shape{
+public class Rectangle implements TwoDimensionalShape {
 
     private final double length;
     private final double width;
@@ -14,10 +16,5 @@ public class Rectangle implements Shape{
     @Override
     public double area() {
         return length * width;
-    }
-
-    @Override
-    public double volume() {
-        throw new UnsupportedOperationException("Volume not applicable for Rectangle"); // Unnecessary method
     }
 }

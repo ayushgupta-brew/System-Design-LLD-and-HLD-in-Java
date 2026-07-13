@@ -1,7 +1,9 @@
-package Low_Level_Design.SOLID_Principles.Interface_Segregation_Principle.Without_ISP;
+package Low_Level_Design.SOLID_Principles.Interface_Segregation_Principle.With_ISP;
+
+import Low_Level_Design.SOLID_Principles.Interface_Segregation_Principle.Without_ISP.Shape;
 
 // Square is a 2D shape but is forced to implement volume()
-public class Square implements Shape{
+public class Square implements TwoDimensionalShape {
 
     private final double side;
 
@@ -12,10 +14,5 @@ public class Square implements Shape{
     @Override
     public double area() {
         return side * side;
-    }
-
-    @Override
-    public double volume() {
-        throw new UnsupportedOperationException("Volume not applicable for Square"); // Unnecessary method
     }
 }

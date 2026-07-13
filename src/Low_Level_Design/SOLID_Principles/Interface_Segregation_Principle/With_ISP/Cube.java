@@ -1,7 +1,9 @@
-package Low_Level_Design.SOLID_Principles.Interface_Segregation_Principle.Without_ISP;
+package Low_Level_Design.SOLID_Principles.Interface_Segregation_Principle.With_ISP;
+
+import Low_Level_Design.SOLID_Principles.Interface_Segregation_Principle.Without_ISP.Shape;
 
 // Cube is a 3D shape, so it actually has a volume
-public class Cube implements Shape {
+public class Cube implements ThreeDimensionalShape {
     private final double side;
 
     public Cube(double s) {
