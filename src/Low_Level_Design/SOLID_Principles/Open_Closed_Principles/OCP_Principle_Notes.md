@@ -46,14 +46,22 @@ SOLID_Principles
 
 Files: `main`, `product`, `shoppingCart`, `shoppingCartStorage`
 
-`shoppingCartStorage` has storage logic hardcoded. Supporting MongoDB means editing it directly:
+Here `shoppingCartStorage` doesn't use if-else branching. Instead it has a separate method for each database, all inside the same class:
 
 ```
-if (SQL) ...
-else if (Mongo) ...
+class shoppingCartStorage {
+    saveToSql(...)   { ... }
+    saveToMongo(...) { ... }
+}
 ```
 
-Every new storage type (Redis, Firebase, an API) means another edit, another branch, another risk of breaking the branches already working.
+This looks cleaner than if-else, but it's the same OCP violation wearing a different shape:
+
+- Adding Redis still means **editing this class** — you add `saveToRedis(...)` to it. The class is never "closed"; it grows with every new database.
+- `shoppingCart` (or whoever calls this) has to know which method to call for which database — the decision logic just moved to the caller instead of disappearing. The caller stays coupled to `shoppingCartStorage`'s internals either way.
+- The class still has multiple reasons to change: a SQL-specific fix, a Mongo-specific fix, or a new database each force an edit to the same file.
+
+**Takeaway:** if-else vs. separate methods is a style difference, not a design difference. Both keep storage logic living in one class that must be touched for every new case. OCP isn't fixed by removing the if-else — it's fixed by removing the *need to edit this class at all* when a new database shows up.
 
 ---
 
@@ -127,9 +135,10 @@ A phone has one charging port. Different compatible chargers can be used without
 ## 10) How to spot a violation
 
 - Repeated edits to the same class for every new feature
-- Large if-else / switch chains based on type
-- Multiple database- or vendor-specific conditions in one class
+- Large if-else / switch chains based on type — **or** a separate method per case sitting in one class (`saveToSql()`, `saveToMongo()`, ...). Same violation, different shape.
+- Multiple database- or vendor-specific conditions or methods in one class
 - One class handling many implementations directly
+- The caller has to know which method/branch to pick — the class didn't remove the decision, it just relocated it
 
 **And the inverse — over-application:**
 - An interface with only one implementation and no second one in sight
