@@ -1,26 +1,30 @@
 # SOLID Principles — LSP (Liskov Substitution Principle)
 
-> **Note on this document:** the earlier version guessed at what the classes do from screenshots alone. Section 3 below now uses your actual `EmployeeInterfaceSpecialAllowances` interface. `Employee`, `Perks`, `PermanentEmployee`, `TemporaryEmployee`, and `EmployeeManager` bodies are still not confirmed — the surrounding class code in section 3 is written to be consistent with your real interface, not copied from your actual files. Paste those if you want the rest verified line-for-line.
+## 1) What LSP says, in plain words
+
+> If B is a child type of A, you should be able to use a B object anywhere an A object is expected — and nothing should break.
+
+The common short version — "a child should behave like its parent" — is too fuzzy to actually check against. Here is a clearer, testable way to check it.
+
+**A child class breaks LSP if it does any of these three things:**
+
+1. **Asks for more than the parent did.**
+   Example: the parent's method accepts any input. The child's version throws an error on some input the parent was fine with.
+
+2. **Promises less than the parent did.**
+   Example: the parent's method always returns a real value. The child's version sometimes returns `null` instead.
+
+3. **Breaks a rule the parent always kept true.**
+   Example: the parent guarantees that `area = width × height` stays correct no matter what. The child changes this rule secretly.
+
+If a child class avoids all three, it follows LSP — no matter how different its code looks inside.
+If it does even one of these, it breaks LSP — even if it still sounds like a normal "is-a" relationship on paper.
 
 ---
 
-## 1) What LSP means (formal version)
+## 2) The classic example: Rectangle and Square
 
-> **If B is a subtype of A, objects of type A should be replaceable with objects of type B without altering the correctness of the program.**
-
-The popular phrasing — "a child should behave like the parent" — is too vague to actually test against. The **real test** (from Liskov/Wing's formal definition) has three parts. A subclass violates LSP if it does any of these:
-
-1. **Strengthens preconditions** — requires more from the caller than the parent did (e.g., parent's method accepts any input, child's override throws on inputs the parent accepted).
-2. **Weakens postconditions** — guarantees less than the parent promised (e.g., parent guarantees a non-null return, child returns null).
-3. **Breaks an invariant** — violates a rule the parent held true for all instances (e.g., parent guarantees `area = width × height` stays consistent after either is set).
-
-If a subclass does none of these, it satisfies LSP — regardless of how different its internal implementation is. If it does any of these, it violates LSP — even if it "sounds like" a valid is-a relationship.
-
----
-
-## 2) The classic example (Rectangle/Square)
-
-This is worth knowing because it's the standard reference case — a violation that has nothing to do with missing methods, only broken invariants:
+This example is famous because the problem has nothing to do with missing methods. It's about breaking a hidden rule.
 
 ```
 class Rectangle {
@@ -30,12 +34,12 @@ class Rectangle {
 }
 
 class Square extends Rectangle {
-    setWidth(w)  { this.width = w; this.height = w; }  // forces both
-    setHeight(h) { this.width = h; this.height = h; }  // forces both
+    setWidth(w)  { this.width = w; this.height = w; }  // changes both
+    setHeight(h) { this.width = h; this.height = h; }  // changes both
 }
 ```
 
-`Square` is a mathematically valid "is-a" Rectangle. But code that does:
+On paper, a square is a rectangle. But look what happens:
 
 ```
 rect.setWidth(5);
@@ -43,23 +47,25 @@ rect.setHeight(10);
 assert(rect.area() == 50);
 ```
 
-works for `Rectangle` and **breaks silently for `Square`** (`area()` returns 100, not 50). No exception, no null — just a wrong answer, because `Square` broke an invariant the caller relied on (`width` and `height` are independent). This is why "does the child have all the parent's methods" is the wrong question — it's whether the child preserves what callers were **already relying on**.
+This works fine with a normal `Rectangle`. But if `rect` is actually a `Square`, the answer becomes 100, not 50 — with no error, no warning, just a silently wrong result.
+
+**Why this happens:** `Square` broke a rule the caller was quietly relying on — that changing the width doesn't also change the height. That hidden rule is called an "invariant" (something that should always stay true). So the real question isn't "does the child have the same methods as the parent?" It's "does the child keep every promise the parent already made?"
 
 ---
 
-## 3) Applying the same test to an Employee/Perks hierarchy
+## 3) Same idea, applied to your Employee code
 
-Suppose the base `EmployeeInterface` promises perks and bonus to every employee — something like:
+Say the base interface `EmployeeInterface` promises perks and a bonus to every employee:
 
 ```java
 public interface EmployeeInterface {
     Double calculateSalary();
-    List<Perks> getPerks();       // promised to every implementer
-    Double calculateBonus();      // promised to every implementer
+    List<Perks> getPerks();       // promised to everyone
+    Double calculateBonus();      // promised to everyone
 }
 ```
 
-**Violation shape (`Without_LSP`):**
+**The problem version (`Without_LSP`):**
 
 ```java
 public class ContractEmployee implements EmployeeInterface {
@@ -75,9 +81,9 @@ public class ContractEmployee implements EmployeeInterface {
 }
 ```
 
-Any code written against `EmployeeInterface` — e.g. `EmployeeManager` calling `getPerks()` on a list of employees — works fine for `PermanentEmployee` and **throws at runtime** the moment it hits a `ContractEmployee`. That's a strengthened precondition: the base interface never told callers to expect an exception here.
+Any code written to work with `EmployeeInterface` — say, `EmployeeManager` calling `getPerks()` on a list of employees — works fine until it reaches a `ContractEmployee`, and then it crashes. The base interface never warned anyone this could happen. That's the violation: the child is asking more of the caller (be ready to catch an error) than the parent ever did.
 
-**The fix (`With_LSP`) — your actual interface:**
+**The fix (`With_LSP`) — using your actual interface:**
 
 ```java
 public interface EmployeeInterfaceSpecialAllowances {
@@ -86,7 +92,7 @@ public interface EmployeeInterfaceSpecialAllowances {
 }
 ```
 
-`calculateSalary()` stays on the base `EmployeeInterface` — every employee gets paid. Bonus and perks move to `EmployeeInterfaceSpecialAllowances`, a separate contract that **only employee types who actually have these implement**:
+`calculateSalary()` stays on the base interface, since every employee gets paid. Bonus and perks move to a separate interface that only the employees who actually have them will implement:
 
 ```java
 public class PermanentEmployee implements EmployeeInterface, EmployeeInterfaceSpecialAllowances {
@@ -97,62 +103,73 @@ public class PermanentEmployee implements EmployeeInterface, EmployeeInterfaceSp
 
 public class ContractEmployee implements EmployeeInterface {
     public Double calculateSalary() { ... }
-    // no calculateBonus(), no getPerks() — and none required, because
-    // ContractEmployee never claims to implement EmployeeInterfaceSpecialAllowances
+    // no calculateBonus(), no getPerks() — and that's fine, because
+    // ContractEmployee never claims to have them
 }
 ```
 
-Now `ContractEmployee` isn't lying about supporting bonus/perks — it simply doesn't claim to. `EmployeeManager` can safely call `calculateSalary()` on any `EmployeeInterface`, and separately call `calculateBonus()`/`getPerks()` only on employees it knows implement `EmployeeInterfaceSpecialAllowances` (e.g. via `instanceof` check or by holding a typed list of just those employees). No runtime surprise, because the type system — not a try/catch — enforces what's actually available.
+Now `ContractEmployee` isn't pretending to support bonuses or perks — it simply doesn't sign up for that contract. `EmployeeManager` can safely call `calculateSalary()` on any employee. If it needs bonus/perks info, it only asks employees that actually implement `EmployeeInterfaceSpecialAllowances`.
 
-**This is the key correction to the original doc:** the fix wasn't "give every employee perks," and it wasn't "leave `getPerks()` throwing on the base interface." It was **removing the false promise from the base contract entirely** — `EmployeeInterface` stops claiming every employee has perks, so no implementer has to lie about it.
-
----
-
-## 4) Why LSP matters
-
-- Polymorphism only works if substitutability is real — code written against the base type must stay correct for every subtype.
-- Without it: `instanceof` checks creep in everywhere, callers have to special-case subtypes, and the type hierarchy becomes decoration rather than a guarantee.
-- With it: code written once against `Employee` works for every current and future subtype without modification — this is also what makes OCP achievable (you can't safely extend via new subclasses if substitutability isn't guaranteed).
+**The key fix wasn't** "give every employee perks" and it wasn't "keep the error, just document it better." **The actual fix was removing the false promise from the base interface** — so no class is ever forced to lie about what it can do.
 
 ---
 
-## 5) How the fix works — and its real connection to ISP
+## 4) Why this matters
 
-Splitting `EmployeeInterface` so that `EmployeeInterfaceSpecialAllowances` carries `calculateBonus()`/`getPerks()` separately is **Interface Segregation Principle**, not LSP itself. LSP is *diagnosing* the problem (the base interface makes a promise not every implementer can keep); ISP is *the tool* that resolves it (stop bundling optional behavior into a contract everyone is forced to implement).
-
-**Pattern worth noting:** just like OCP leaned on DIP to work (Persistence example, earlier doc), LSP violations here are fixed using ISP. These principles aren't independent — SOLID is one connected design discipline, not five separate checklists. You'll rarely apply just one in isolation on real code.
-
----
-
-## 6) How to actually test for a violation
-
-Don't ask "does the child have every parent method." Ask, for each overridden method:
-- Does it accept everything the parent's version accepted, or less? (precondition check)
-- Does it guarantee everything the parent's version guaranteed, or less? (postcondition check)
-- Does it preserve every invariant the parent held? (invariant check)
-
-Concrete red flags:
-- Overridden method throws an exception the base method's contract didn't promise
-- Overridden method returns `null`/dummy values where the base guaranteed a real value
-- Caller needs `instanceof` checks to use a type safely
-- A subtype needs special-case handling anywhere it's used polymorphically
+- Code that works with the base type should keep working no matter which specific subtype it actually gets. That's the entire point of using shared types in the first place.
+- Without LSP: you end up sprinkling `if (employee instanceof ContractEmployee)` checks everywhere, because you can't trust the base type's promises anymore.
+- With LSP: you can add brand-new employee types later, and old code that uses `EmployeeInterface` keeps working without any changes. This is also what makes OCP (adding new code without editing old code) actually possible — you can't safely add new subtypes if substitution isn't safe to begin with.
 
 ---
 
-## 7) Interview-ready definition
+## 5) How this connects to ISP
 
-> LSP requires that subtypes be substitutable for their base type without altering program correctness. Formally: subclasses can't strengthen preconditions, weaken postconditions, or break invariants the base type guaranteed. Violations often stem from base types promising more than every subtype can honor — commonly fixed by segregating the interface (ISP) so subtypes only implement what they can actually support.
+Splitting the bonus/perks methods into their own interface is really the **Interface Segregation Principle** at work, not LSP itself.
+
+Think of it this way:
+- **LSP finds the problem:** the base interface is promising something not every class can deliver.
+- **ISP provides the fix:** stop bundling optional features into a contract everyone is forced to sign.
+
+These principles aren't separate tools you pick one at a time — in real code, they usually show up together. Same pattern as OCP, which relies on DIP (using interfaces instead of concrete classes) to actually work.
 
 ---
 
-## 8) Revision summary
+## 6) A simple way to test any subclass
 
-**Violates LSP:** subclass throws on inputs the parent accepted, returns null/dummy where the parent guaranteed a value, or breaks an invariant callers relied on (Rectangle/Square).
+Don't ask: *"Does the child have every method the parent has?"*
 
-**Doesn't violate LSP:** subclass legitimately has less to offer (e.g., no perks) *as long as the base contract never promised that to every subtype* — the fix is narrowing the contract (ISP), not forcing every subtype to fake support.
+Instead ask, for every method the child overrides:
 
-**Test to apply:** precondition, postcondition, invariant — not "does it have the method."
+- Does it accept everything the parent's version accepted — or does it reject more? (asks more than the parent did)
+- Does it guarantee everything the parent's version guaranteed — or does it guarantee less? (promises less than the parent did)
+- Does it keep every rule the parent always kept true? (breaks a hidden rule)
 
-## 9) Memory trick
+**Warning signs to look for:**
+- A method throws an error the base version never warned about
+- A method returns `null` or a placeholder where the base version always returned something real
+- Your code needs `instanceof` checks to safely use an object
+- One specific subtype always needs special handling wherever it's used
 
-**A subclass can do less than what the contract allows — but never less than what the contract promises.**
+---
+
+## 7) Short definition for interviews
+
+> LSP means any subtype should be usable anywhere its base type is expected, without breaking the program. In practice: a subclass shouldn't ask more of the caller, promise less than the base type, or break a rule the base type always kept. This usually comes from a base type promising more than every subtype can actually deliver — fixed by splitting the interface (ISP) so each subtype only implements what it truly supports.
+
+---
+
+## 8) Quick summary
+
+**Breaks LSP:**
+- Subclass throws an error on input the parent accepted
+- Subclass returns `null`/placeholder where the parent always returned something real
+- Subclass breaks a rule the parent always kept (Rectangle/Square)
+
+**Doesn't break LSP:**
+- Subclass genuinely has less to offer (like no perks) — **as long as the base interface never promised that to everyone in the first place.** The fix is narrowing the promise (ISP), not forcing every subtype to fake support for it.
+
+**The real test:** does it ask more, promise less, or break a rule? — not "does it have the method."
+
+## 9) Easy way to remember it
+
+**A subclass can offer less than what's allowed — but never less than what was promised.**
